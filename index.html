@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detector de Bandeira de Cartão</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .card { max-width: 400px; margin: 0 auto; padding: 1rem; border: 1px solid #ccc; border-radius: 8px; }
+    input, button { width: 100%; padding: 0.5rem; margin: 0.5rem 0; }
+    .resultado { margin-top: 1rem; padding: 0.75rem; background: #f9f9f9; border: 1px dashed #aaa; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Detectar bandeira do cartão</h1>
+    <label>Número do cartão</label>
+    <input id="numeroCartao" type="text" placeholder="0000 0000 0000 0000">
+    <button id="btnVerificar">Verificar</button>
+    <div id="resultado" class="resultado">Preencha e clique em verificar.</div>
+  </div>
+
+  <script>
+    function detectarBandeira(numeroCartao) {
+      const clean = String(numeroCartao).replace(/\D/g, '');
+      if (clean.length < 12 || clean.length > 19) return 'Inválido';
+      const bandeiras = [
+        { nome: 'Visa', regex: /^4\d{12}(\d{3})?(\d{3})?$/ },
+        { nome: 'MasterCard', regex: /^(5[1-5]\d{14}|2(2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/ },
+        { nome: 'American Express', regex: /^3[47]\d{13}$/ },
+        { nome: 'Diners Club', regex: /^3(?:0[0-5]|[68]\d)\d{11}$/ },
+        { nome: 'Discover', regex: /^(6011\d{12}|65\d{14}|64[4-9]\d{13}|622(?:12[6-9]|1[3-9]\d|[2-8]\d{2}|9[01]\d|92[0-5])\d{10})$/ },
+        { nome: 'JCB', regex: /^(?:35(2[89]|[3-8]\d)\d{12})$/ },
+      ];
+      const match = bandeiras.find(b => b.regex.test(clean));
+      return match ? match.nome : 'Desconhecida';
+    }
+
+    function luhnValido(numeroCartao) {
+      const clean = String(numeroCartao).replace(/\D/g, '');
+      let soma = 0;
+      let deveDobrar = false;
+      for (let i = clean.length - 1; i >= 0; i--) {
+        let digito = parseInt(clean[i], 10);
+        if (deveDobrar) {
+          digito *= 2;
+          if (digito > 9) digito -= 9;
+        }
+        soma += digito;
+        deveDobrar = !deveDobrar;
+      }
+      return soma % 10 === 0;
+    }
+
+    document.getElementById('btnVerificar').addEventListener('click', () => {
+      const numero = document.getElementById('numeroCartao').value.trim();
+      if (!numero) {
+        document.getElementById('resultado').textContent = 'Informe o número do cartão.';
+        return;
+      }
+      const bandeira = detectarBandeira(numero);
+      const luhn = luhnValido(numero) ? 'válido' : 'inválido';
+      document.getElementById('resultado').innerHTML =
+        `Bandeira: <strong>${bandeira}</strong><br>Luhn: <strong>${luhn}</strong>`;
+    });
+  </script>
+</body>
+</html>
